@@ -11,32 +11,10 @@ from sklearn.cross_validation import train_test_split
 
 df = pd.read_csv('rollingsales_manhattan.csv', skiprows=4, low_memory=False)
 
-# set sale date as index
-#index = pd.PeriodIndex(df['SALE DATE'], freq='D')
-#df = df.set_index(index)
-#ts = df['ADDRESS'].groupby(df.index).count()
-
-# convert price to integer
-df['SALE PRICE'] = df['SALE PRICE'].map(lambda element: 
-										int(element.replace(",", "").lstrip("$")))
-
-# convert square feet to integer
-df['GROSS SQUARE FEET'] = df['GROSS SQUARE FEET'].map(lambda element: 
-													  int(element.replace(",","")))
-df['LAND SQUARE FEET'] = df['LAND SQUARE FEET'].map(lambda element: 
-													  int(element.replace(",","")))
-
-# just consider residential properties with a non-zero sale price
-df = df[df['TAX CLASS AT TIME OF SALE'] == 1]
-df = df[df['SALE PRICE'] > 100]
-df = df[df['GROSS SQUARE FEET'] > 0]
-#df['logsaleprice'] = df['SALE PRICE'].map(lambda num: np.log(num))
-df['class1_dummy'] = pd.Categorical(df['BUILDING CLASS CATEGORY']).codes
-df['class2_dummy'] = pd.Categorical(df['BUILDING CLASS AT TIME OF SALE']).codes
-df['logsaleprice'] = df['SALE PRICE'].map(lambda num: np.log(num))
+# specify the features for k-NN.  In this case, geographic features.
 features = [
-			'logsaleprice',
-			'TOTAL UNITS'
+			'BLOCK',
+			'LOT'
 			]
 df = df[features + ['NEIGHBORHOOD']]
 
@@ -45,7 +23,7 @@ df = df[features + ['NEIGHBORHOOD']]
 # ----------------------
 
 # split data into training and test sets
-dfTrain, dfTest = train_test_split(df, test_size=0.2)
+dfTrain, dfTest = train_test_split(df, test_size=0.3)
 
 # number of features
 fnum = len(features)
@@ -55,7 +33,7 @@ fnum = len(features)
 
 #determine k for K-NN
 for k in range(1,20):
-    model = KNeighborsClassifier(n_neighbors=k)
+    model = KNeighborsClassifier(n_neighbors=k, algorithm='auto')
     model.fit(dfTrain[:,:fnum], dfTrain[:,fnum])
     # make predictions
     expected = dfTest[:,fnum]
